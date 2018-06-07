@@ -2,6 +2,8 @@ const http = require('http');
 const express = require('express');
 const socketio = require('socket.io');
 
+const RpsGame = require('./rps-game')
+
 const app = express();
 
 const clientPath = `${__dirname}/../client`;
@@ -13,10 +15,19 @@ const server = http.createServer(app);
 
 const io = socketio(server);
 
+let waitingPlayer = null;
+
 io.on('connection', (sock) => {
-  console.log("someone connected");
-  // sends to individual
-  sock.emit('message', 'Hi, you are connected');
+  // sends to individual is sock.emit
+  if(waitingPlayer) {
+    //start game
+    new RpsGame(waitingPlayer, sock);
+    waitingPlayer = null;
+  }
+  else {
+    waitingPlayer = sock;
+    waitingPlayer.emit('message', 'Waiting for opponent...');
+  }
 
   sock.on('message', (text) => {
     // sends to all
